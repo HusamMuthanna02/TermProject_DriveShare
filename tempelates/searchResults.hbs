@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search Results</title>
+</head>
+<body>
+    <h1>Available Cars</h1>
+
+    {{#if cars.length}}
+        <ul>
+            {{#each cars}}
+                <li>
+                    Model: {{model}}, Year: {{year}}, Price: {{rentalPrice}} per day
+                    <br>
+                    Location: {{pickupLocation}}
+                    <form action="/car/book/{{_id}}" method="POST">
+                        <input type="hidden" name="startDate" value="{{../startDate}}">
+                        <input type="hidden" name="endDate" value="{{../endDate}}">
+                        <button type="submit">Book Now</button>
+                    </form>
+                </li>
+            {{/each}}
+        </ul>
+    {{else}}
+        <p>No cars available for the selected criteria.</p>
+    {{/if}}
+
+    <a href="/car/search">Search Again</a>
+</body>
+</html>

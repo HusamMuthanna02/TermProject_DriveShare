@@ -64,6 +64,14 @@ const CarListingSchema = new mongoose.Schema({
     rentalPrice: {
         type: Number,
         required: true
+    },
+    bookings: { // Track bookings as an array of date ranges
+        type: [{
+            renterUsername: String,
+            startDate: Date,
+            endDate: Date
+        }],
+        default: []
     }
 });
 

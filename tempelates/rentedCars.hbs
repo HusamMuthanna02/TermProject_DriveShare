@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your Rented Cars</title>
+</head>
+<body>
+    <h1>Your Rented Cars</h1>
+
+    {{#if rentedCars}}
+        <ul>
+            {{#each rentedCars}}
+                <li>
+                    Model: {{model}}, Year: {{year}}, Mileage: {{mileage}}, Price: {{rentalPrice}}
+                    <br>
+                    Rental Period: From {{dateFormat startDate 'MM-DD-YYYY'}} To {{dateFormat endDate 'MM-DD-YYYY'}}
+                    <br>
+                    Owner: {{ownerUsername}}
+                </li>
+            {{/each}}
+        </ul>
+    {{else}}
+        <p>You are not renting any cars at the moment.</p>
+    {{/if}}
+
+    <a href="/home">Back to Home</a>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Available Cars</title>
+</head>
+<body>
+    <h1>Available Cars for Rent</h1>
+
+    <a href="/car/search">Search for Cars</a>
+
+
+    {{#if cars.length}}
+        <ul>
+            {{#each cars}}
+                <li>
+                    Model: {{model}}, Year: {{year}}, Price: {{rentalPrice}} per day
+                    <br>
+                    Location: {{pickupLocation}}
+                    <form action="/car/book/{{_id}}" method="POST">
+                        <label for="startDate">Start Date:</label>
+                        <input type="date" id="startDate" name="startDate" required>
+                        <label for="endDate">End Date:</label>
+                        <input type="date" id="endDate" name="endDate" required>
+                        <button type="submit">Book Now</button>
+                    </form>
+                </li>
+            {{/each}}
+        </ul>
+    {{else}}
+        <p>No cars are currently available for rent.</p>
+    {{/if}}
+
+    <a href="/home">Back to Home</a>
+</body>
+</html>

@@ -29,6 +29,19 @@
                     {{else}}
                         Available Now
                     {{/if}}
+                    <br>
+                    {{#if bookings.length}}
+                        <strong>Bookings:</strong>
+                        <ul>
+                            {{#each bookings}}
+                                <li>
+                                    Renter: {{renterUsername}}, From: {{dateFormat startDate 'MM-DD-YYYY'}} To: {{dateFormat endDate 'MM-DD-YYYY'}}
+                                </li>
+                            {{/each}}
+                        </ul>
+                    {{else}}
+                        <p>No bookings for this car.</p>
+                    {{/if}}
                     <a href="/car/edit/{{_id}}">Edit</a>
                 </li>
             {{/each}}
@@ -38,5 +51,6 @@
     {{/if}}
 
     <a href="/car/list">Add a New Car</a>
+    <br>
 </body>
 </html>

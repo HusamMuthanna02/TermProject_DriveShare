@@ -251,6 +251,141 @@ app.post('/login', async (req, res) => {
     }
 });
 
+app.get('/car/search', (req, res) => {
+    const sessionId = req.cookies.sessionId;
+    const session = sessionManager.getSession(sessionId);
+
+    if (!session) {
+        return res.redirect('/login');
+    }
+
+    res.render('searchCar'); // Render the search page
+});
+
+app.post('/car/search', async (req, res) => {
+    const { location, startDate, endDate } = req.body;
+
+    try {
+        const availableCars = await CarListing.find({
+            pickupLocation: location,
+            availability: {
+                $elemMatch: {
+                    startDate: { $lte: new Date(startDate) },
+                    endDate: { $gte: new Date(endDate) }
+                }
+            }
+        });
+
+        res.render('searchResults', { cars: availableCars, startDate, endDate });
+    } catch (error) {
+        console.error("Error searching for cars:", error);
+        res.status(500).send("Failed to search for cars.");
+    }
+});
+
+app.post('/car/book/:id', async (req, res) => {
+    const sessionId = req.cookies.sessionId;
+    const session = sessionManager.getSession(sessionId);
+
+    if (!session) {
+        return res.redirect('/login');
+    }
+
+    const carId = req.params.id;
+    const { startDate, endDate } = req.body;
+
+    try {
+        const car = await CarListing.findById(carId);
+
+        if (!car) {
+            return res.status(404).send("Car listing not found.");
+        }
+
+        // Check for overlapping bookings
+        const newStartDate = new Date(startDate);
+        const newEndDate = new Date(endDate);
+        const isOverlapping = car.bookings.some(booking => {
+            const existingStartDate = new Date(booking.startDate);
+            const existingEndDate = new Date(booking.endDate);
+            return (
+                (newStartDate >= existingStartDate && newStartDate <= existingEndDate) || // New start overlaps existing booking
+                (newEndDate >= existingStartDate && newEndDate <= existingEndDate) || // New end overlaps existing booking
+                (newStartDate <= existingStartDate && newEndDate >= existingEndDate) // New booking fully contains existing booking
+            );
+        });
+
+        if (isOverlapping) {
+            return res.status(400).send("This car is already booked for the selected time frame.");
+        }
+
+        // Add the booking
+        car.bookings.push({
+            renterUsername: session.username,
+            startDate: newStartDate,
+            endDate: newEndDate
+        });
+
+        await car.save();
+        res.redirect('/home'); // Redirect to home after booking
+    } catch (error) {
+        console.error("Error booking car:", error);
+        res.status(500).send("Failed to book car.");
+    }
+});
+
+app.get('/car/available', async (req, res) => {
+    const sessionId = req.cookies.sessionId;
+    const session = sessionManager.getSession(sessionId);
+
+    if (!session) {
+        return res.redirect('/login');
+    }
+
+    try {
+        const availableCars = await CarListing.find({
+            ownerUsername: { $ne: session.username }, // Exclude cars owned by the user
+            availability: {
+                $elemMatch: {
+                    startDate: { $lte: new Date() },
+                    endDate: { $gte: new Date() }
+                }
+            }
+        });
+
+        res.render('availableCars', { cars: availableCars });
+    } catch (error) {
+        console.error("Error fetching available cars:", error);
+        res.status(500).send("Failed to fetch available cars.");
+    }
+});
+
+app.get('/car/rented-cars', async (req, res) => {
+    const sessionId = req.cookies.sessionId;
+    const session = sessionManager.getSession(sessionId);
+
+    if (!session) {
+        return res.redirect('/login');
+    }
+
+    const username = session.username;
+
+    try {
+        const rentedCars = await CarListing.find({ 'bookings.renterUsername': username });
+        const formattedCars = rentedCars.map(car => ({
+            model: car.model,
+            year: car.year,
+            mileage: car.mileage,
+            rentalPrice: car.rentalPrice,
+            startDate: car.bookings.find(b => b.renterUsername === username)?.startDate,
+            endDate: car.bookings.find(b => b.renterUsername === username)?.endDate,
+            ownerUsername: car.ownerUsername
+        }));
+        res.render('rentedCars', { rentedCars: formattedCars });
+    } catch (error) {
+        console.error("Error fetching rented cars:", error);
+        res.status(500).send("Failed to fetch rented cars.");
+    }
+});
 
 app.listen(3000, () => {
     console.log('Server is running on http://localhost:3000');
