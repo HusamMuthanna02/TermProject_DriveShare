@@ -14,13 +14,16 @@
                     <br>
                     Rental Period: From {{dateFormat startDate 'MM-DD-YYYY'}} To {{dateFormat endDate 'MM-DD-YYYY'}}
                     <br>
-                    Owner: {{ownerUsername}}
+                    <p>Click Owners Name To Message</p>
+                    Owner: <a href="/messages/{{ownerUsername}}">{{ownerUsername}}</a> <!-- Link to message the owner -->
                     <br>
                     {{#if paymentMade}}
                         <span>Payment Made</span>
+                        <br><br>
                     {{else}}
                         <form action="/car/pay/{{_id}}" method="POST" style="display:inline;">
                             <button type="submit">Pay ${{rentalPrice}}</button>
+                            <br><br>
                         </form>
                     {{/if}}
                 </li>

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Messages</title>
+    <title>Messages with {{otherUsername}}</title>
 </head>
 <body>
-    <h1>Messages</h1>
+    <h1>Messages with {{otherUsername}}</h1>
 
     <div>
         <h2>Conversation</h2>
@@ -22,9 +22,7 @@
     <div>
         <h2>Send a Message</h2>
         <form action="/messages/send" method="POST">
-            <label for="receiver">To:</label>
-            <input type="text" id="receiver" name="receiver" required>
-            <br>
+            <input type="hidden" name="receiver" value="{{otherUsername}}">
             <label for="message">Message:</label>
             <textarea id="message" name="message" required></textarea>
             <br>

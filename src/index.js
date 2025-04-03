@@ -72,9 +72,22 @@ app.get('/home', async (req, res) => {
         try {
             const user = await UserCollection.findOne({ username: session.username });
             const notifications = user.notifications || []; // Fetch notifications from the database
-            res.render('home', { username: session.username, balance: user.balance, notifications }); // Pass balance to the template
+
+            // Fetch unique contacts for messaging
+            const messages = await MessageCollection.find({
+                $or: [{ sender: session.username }, { receiver: session.username }]
+            });
+
+            const rawContacts = [...new Set(messages.map(msg => 
+                msg.sender === session.username ? msg.receiver : msg.sender
+            ))];
+
+            // Filter contacts to include only actual users in the database
+            const contacts = await UserCollection.find({ username: { $in: rawContacts } }).distinct('username');
+
+            res.render('home', { username: session.username, balance: user.balance, notifications, contacts });
         } catch (error) {
-            console.error("Error fetching notifications:", error);
+            console.error("Error fetching notifications or contacts:", error);
             res.status(500).send("Failed to load home page.");
         }
     } else {
@@ -410,7 +423,7 @@ app.get('/car/rented-cars', async (req, res) => {
                 rentalPrice: car.rentalPrice,
                 startDate: booking?.startDate,
                 endDate: booking?.endDate,
-                ownerUsername: car.ownerUsername,
+                ownerUsername: car.ownerUsername, // Include the owner's username
                 paymentMade: booking?.paymentMade // Include paymentMade property
             };
         });
@@ -464,8 +477,8 @@ app.post('/car/pay/:id', async (req, res) => {
     }
 });
 
-// Route to view messages
-app.get('/messages', async (req, res) => {
+// Route to view messages with a specific user
+app.get('/messages/:username', async (req, res) => {
     const sessionId = req.cookies.sessionId;
     const session = sessionManager.getSession(sessionId);
 
@@ -473,14 +486,25 @@ app.get('/messages', async (req, res) => {
         return res.redirect('/login');
     }
 
-    const username = session.username;
+    const loggedInUsername = session.username;
+    const otherUsername = req.params.username;
 
     try {
+        // Validate that the other user exists in the UserCollection
+        const userExists = await UserCollection.findOne({ username: { $regex: `^${otherUsername}$`, $options: 'i' } });
+        if (!userExists) {
+            return res.status(404).send("The specified user does not exist.");
+        }
+
+        // Fetch messages between the logged-in user and the specified user
         const messages = await MessageCollection.find({
-            $or: [{ sender: username }, { receiver: username }]
+            $or: [
+                { sender: loggedInUsername, receiver: otherUsername },
+                { sender: otherUsername, receiver: loggedInUsername }
+            ]
         }).sort({ timestamp: 1 });
 
-        res.render('messages', { messages, username });
+        res.render('messages', { messages, username: loggedInUsername, otherUsername });
     } catch (error) {
         console.error("Error fetching messages:", error);
         res.status(500).send("Failed to fetch messages.");
@@ -500,16 +524,49 @@ app.post('/messages/send', async (req, res) => {
     const sender = session.username;
 
     try {
-        const newMessage = new MessageCollection({ sender, receiver, message });
+        // Validate that the receiver exists in the UserCollection using an exact match
+        const receiverExists = await UserCollection.findOne({ username: receiver });
+        if (!receiverExists) {
+            return res.status(400).send("The specified receiver does not exist.");
+        }
+
+        const newMessage = new MessageCollection({ sender, receiver: receiverExists.username, message });
         await newMessage.save();
 
         // Notify the receiver
-        notificationManager.notify(receiver, `You have a new message from ${sender}.`);
+        notificationManager.notify(receiverExists.username, `You have a new message from ${sender}.`);
 
-        res.redirect('/messages');
+        res.redirect(`/messages/${receiverExists.username}`);
     } catch (error) {
         console.error("Error sending message:", error);
         res.status(500).send("Failed to send message.");
+    }
+});
+
+// Route to view all messages and start a new conversation
+app.get('/messages', async (req, res) => {
+    const sessionId = req.cookies.sessionId;
+    const session = sessionManager.getSession(sessionId);
+
+    if (!session) {
+        return res.redirect('/login');
+    }
+
+    const username = session.username;
+
+    try {
+        // Fetch all usernames except the logged-in user
+        const users = await UserCollection.find({ username: { $ne: username } }).distinct('username');
+
+        // Fetch messages involving the logged-in user
+        const messages = await MessageCollection.find({
+            $or: [{ sender: username }, { receiver: username }]
+        }).sort({ timestamp: 1 });
+
+        res.render('messages', { messages, username, users });
+    } catch (error) {
+        console.error("Error fetching messages or users:", error);
+        res.status(500).send("Failed to fetch messages or users.");
     }
 });
 

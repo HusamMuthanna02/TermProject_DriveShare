@@ -22,7 +22,12 @@
     <a href="/car/list">List A Car</a>
     <a href="/car/manage">Manage Listings</a>
     <a href="/car/available">View Available Cars</a>
-    <a href="/messages">Messages</a>
+    <h2>Messages</h2>
+    <ul>
+        {{#each contacts}}
+            <li><a href="/messages/{{this}}">Conversation with {{this}}</a></li>
+        {{/each}}
+    </ul>
     <a href="/logout">Logout</a>
 </body>
 </html>
