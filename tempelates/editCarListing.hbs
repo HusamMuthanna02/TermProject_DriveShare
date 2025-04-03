@@ -1,0 +1,28 @@
+{{! filepath: c:\Users\husam\OneDrive\Desktop\CIS476\TermProject_DriveShare\tempelates\editCarListing.hbs }}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Car Listing</title>
+</head>
+<body>
+    <h1>Edit Car Listing</h1>
+    <form action="/car/update/{{car._id}}" method="POST">
+        <label for="model">Model:</label>
+        <input type="text" id="model" name="model" value="{{car.model}}" required><br><br>
+
+        <label for="year">Year:</label>
+        <input type="number" id="year" name="year" value="{{car.year}}" required><br><br>
+
+        <label for="mileage">Mileage:</label>
+        <input type="number" id="mileage" name="mileage" value="{{car.mileage}}" required><br><br>
+
+        <label for="pickupLocation">Pickup Location:</label>
+        <input type="text" id="pickupLocation" name="pickupLocation" value="{{car.pickupLocation}}" required><br><br>
+
+        <label for="rentalPrice">Rental Price per Day:</label>
+        <input type="number" id="rentalPrice" name="rentalPrice" value="{{car.rentalPrice}}" required><br><br>
+
+        <button type="submit">Update Car</button>
+    </form>
+</body>
+</html>

@@ -24,6 +24,41 @@ const LogInSchema = new mongoose.Schema({
     },
 })
 
-const collection = mongoose.model("Collection1", LogInSchema)
+const CarListingSchema = new mongoose.Schema({
+    ownerUsername: { // Reference to the car owner
+        type: String,
+        required: true
+    },
+    model: {
+        type: String,
+        required: true
+    },
+    year: {
+        type: Number,
+        required: true
+    },
+    mileage: {
+        type: Number,
+        required: true
+    },
+    availability: { // Store availability as an array of date ranges
+        type: [{
+            startDate: Date,
+            endDate: Date
+        }],
+        default: []
+    },
+    pickupLocation: {
+        type: String,
+        required: true
+    },
+    rentalPrice: {
+        type: Number,
+        required: true
+    }
+});
 
-module.exports = collection
+const CarListing = mongoose.model("CarListing", CarListingSchema); // Corrected model name
+const UserCollection = mongoose.model("UserCollection", LogInSchema)
+
+module.exports = { UserCollection, CarListing };

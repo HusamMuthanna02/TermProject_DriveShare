@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Your Listings</title>
+</head>
+<body>
+    <h1>Manage Your Car Listings</h1>
+
+    {{#if cars}}
+        <ul>
+            {{#each cars}}
+                <li>
+                    Model: {{model}}, Year: {{year}}, Mileage: {{mileage}}, Price: {{rentalPrice}}
+                    <a href="/car/edit/{{_id}}">Edit</a>
+                </li>
+            {{/each}}
+        </ul>
+    {{else}}
+        <p>You have no car listings yet.</p>
+    {{/if}}
+
+    <a href="/car/list">Add a New Car</a>
+</body>
+</html>
