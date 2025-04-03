@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Messages</title>
+</head>
+<body>
+    <h1>Messages</h1>
+
+    <div>
+        <h2>Conversation</h2>
+        <ul>
+            {{#each messages}}
+                <li>
+                    <strong>{{#if (eq sender ../username)}}You{{else}}{{sender}}{{/if}}:</strong> {{message}}
+                    <br>
+                    <small>{{dateFormat timestamp 'MM-DD-YYYY HH:mm:ss'}}</small>
+                </li>
+            {{/each}}
+        </ul>
+    </div>
+
+    <div>
+        <h2>Send a Message</h2>
+        <form action="/messages/send" method="POST">
+            <label for="receiver">To:</label>
+            <input type="text" id="receiver" name="receiver" required>
+            <br>
+            <label for="message">Message:</label>
+            <textarea id="message" name="message" required></textarea>
+            <br>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <a href="/home">Back to Home</a>
+</body>
+</html>

@@ -3,7 +3,7 @@ const express = require('express');
 const app = express();
 const path = require('path');
 const hbs= require('hbs');
-const { UserCollection, CarListing } = require('./mongodb'); // Import both models
+const { UserCollection, CarListing, MessageCollection } = require('./mongodb'); // Import both models
 const bcrypt = require('bcrypt');
 const SessionManager = require('./SessionManager'); // Import SessionManager
 const sessionManager = new SessionManager(); // Get the Singleton instance
@@ -25,6 +25,10 @@ hbs.registerHelper('isAvailable', function (availability) {
 
     // Check if the current date is within the availability range
     return now.isBetween(start, end, null, '[]'); // Inclusive of start and end dates
+});
+
+hbs.registerHelper('eq', function (a, b) {
+    return a === b;
 });
 
 app.use(cookieParser()); // Use cookie-parser middleware
@@ -457,6 +461,55 @@ app.post('/car/pay/:id', async (req, res) => {
     } catch (error) {
         console.error("Error processing payment:", error);
         res.status(500).send("Failed to process payment.");
+    }
+});
+
+// Route to view messages
+app.get('/messages', async (req, res) => {
+    const sessionId = req.cookies.sessionId;
+    const session = sessionManager.getSession(sessionId);
+
+    if (!session) {
+        return res.redirect('/login');
+    }
+
+    const username = session.username;
+
+    try {
+        const messages = await MessageCollection.find({
+            $or: [{ sender: username }, { receiver: username }]
+        }).sort({ timestamp: 1 });
+
+        res.render('messages', { messages, username });
+    } catch (error) {
+        console.error("Error fetching messages:", error);
+        res.status(500).send("Failed to fetch messages.");
+    }
+});
+
+// Route to send a message
+app.post('/messages/send', async (req, res) => {
+    const sessionId = req.cookies.sessionId;
+    const session = sessionManager.getSession(sessionId);
+
+    if (!session) {
+        return res.redirect('/login');
+    }
+
+    const { receiver, message } = req.body;
+    const sender = session.username;
+
+    try {
+        const newMessage = new MessageCollection({ sender, receiver, message });
+        await newMessage.save();
+
+        // Notify the receiver
+        notificationManager.notify(receiver, `You have a new message from ${sender}.`);
+
+        res.redirect('/messages');
+    } catch (error) {
+        console.error("Error sending message:", error);
+        res.status(500).send("Failed to send message.");
     }
 });
 

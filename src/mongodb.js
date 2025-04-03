@@ -84,7 +84,27 @@ const CarListingSchema = new mongoose.Schema({
     }
 });
 
+const MessageSchema = new mongoose.Schema({
+    sender: {
+        type: String,
+        required: true
+    },
+    receiver: {
+        type: String,
+        required: true
+    },
+    message: {
+        type: String,
+        required: true
+    },
+    timestamp: {
+        type: Date,
+        default: Date.now
+    }
+});
+
 const CarListing = mongoose.model("CarListing", CarListingSchema); // Corrected model name
 const UserCollection = mongoose.model("UserCollection", LogInSchema)
+const MessageCollection = mongoose.model("MessageCollection", MessageSchema);
 
-module.exports = { UserCollection, CarListing };
+module.exports = { UserCollection, CarListing, MessageCollection };
