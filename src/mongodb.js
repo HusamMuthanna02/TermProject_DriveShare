@@ -34,6 +34,10 @@ const LogInSchema = new mongoose.Schema({
     notifications: {
         type: [String], // Array of notification messages
         default: []
+    },
+    balance: {
+        type: Number,
+        default: 1000 // Starting balance
     }
 })
 

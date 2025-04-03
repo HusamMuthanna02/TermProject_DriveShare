@@ -15,6 +15,10 @@
                     Rental Period: From {{dateFormat startDate 'MM-DD-YYYY'}} To {{dateFormat endDate 'MM-DD-YYYY'}}
                     <br>
                     Owner: {{ownerUsername}}
+                    <br>
+                    <form action="/car/pay/{{_id}}" method="POST" style="display:inline;">
+                        <button type="submit">Pay ${{rentalPrice}}</button>
+                    </form>
                 </li>
             {{/each}}
         </ul>

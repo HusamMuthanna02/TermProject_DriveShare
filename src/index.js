@@ -13,6 +13,8 @@ const dateFormat = require('handlebars-dateformat'); // Import handlebars-datefo
 const moment = require('moment');
 const { NotificationManager, UserObserver } = require('./NotificationManager'); // Import NotificationManager
 const notificationManager = new NotificationManager(); // Create an instance
+const PaymentProxy = require('./PaymentProxy'); // Import PaymentProxy
+const paymentProxy = new PaymentProxy(notificationManager); // Create an instance
 
 hbs.registerHelper('dateFormat', dateFormat); // Register the helper
 
@@ -66,7 +68,7 @@ app.get('/home', async (req, res) => {
         try {
             const user = await UserCollection.findOne({ username: session.username });
             const notifications = user.notifications || []; // Fetch notifications from the database
-            res.render('home', { username: session.username, notifications }); // Pass notifications to the template
+            res.render('home', { username: session.username, balance: user.balance, notifications }); // Pass balance to the template
         } catch (error) {
             console.error("Error fetching notifications:", error);
             res.status(500).send("Failed to load home page.");
@@ -395,6 +397,7 @@ app.get('/car/rented-cars', async (req, res) => {
     try {
         const rentedCars = await CarListing.find({ 'bookings.renterUsername': username });
         const formattedCars = rentedCars.map(car => ({
+            _id: car._id, // Include the car's ID
             model: car.model,
             year: car.year,
             mileage: car.mileage,
@@ -410,6 +413,45 @@ app.get('/car/rented-cars', async (req, res) => {
     }
 });
 
+app.post('/car/pay/:id', async (req, res) => {
+    const sessionId = req.cookies.sessionId;
+    const session = sessionManager.getSession(sessionId);
+
+    if (!session) {
+        return res.redirect('/login');
+    }
+
+    const carId = req.params.id;
+
+    try {
+        const car = await CarListing.findById(carId);
+
+        if (!car) {
+            return res.status(404).send("Car listing not found.");
+        }
+
+        // Find the booking for the current user
+        const booking = car.bookings.find(b => b.renterUsername === session.username);
+
+        if (!booking) {
+            return res.status(400).send("No booking found for this car.");
+        }
+
+        // Process payment
+        const amount = car.rentalPrice;
+        try {
+            await paymentProxy.processPayment(session.username, car.ownerUsername, amount, car.model);
+        } catch (error) {
+            return res.status(400).send(error.message); // Handle insufficient balance or other errors
+        }
+
+        res.redirect('/car/rented-cars'); // Redirect to rented cars page after payment
+    } catch (error) {
+        console.error("Error processing payment:", error);
+        res.status(500).send("Failed to process payment.");
+    }
+});
+
 app.listen(3000, () => {
     console.log('Server is running on http://localhost:3000');
-})
+});
