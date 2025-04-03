@@ -3,10 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Home</title>
 </head>
 <body>
     <h1>Welcome, {{username}}!</h1>
+    <h2>Notifications</h2>
+    <ul>
+        {{#if notifications.length}}
+            {{#each notifications}}
+                <li>{{this}}</li>
+            {{/each}}
+        {{else}}
+            <li>No notifications available.</li>
+        {{/if}}
+    </ul>
     <a href="/car/rented-cars">View Rented Cars</a>
     <a href="/car/list">List A Car</a>
     <a href="/car/manage">Manage Listings</a>

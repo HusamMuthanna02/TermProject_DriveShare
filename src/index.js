@@ -11,6 +11,8 @@ const cookieParser = require('cookie-parser'); // Import cookie-parser
 const CarListingBuilder = require('./CarListingBuilder'); // Import the builder
 const dateFormat = require('handlebars-dateformat'); // Import handlebars-dateformat
 const moment = require('moment');
+const { NotificationManager, UserObserver } = require('./NotificationManager'); // Import NotificationManager
+const notificationManager = new NotificationManager(); // Create an instance
 
 hbs.registerHelper('dateFormat', dateFormat); // Register the helper
 
@@ -56,12 +58,19 @@ app.get('/car/list', (req, res) => {
 });
 
 
-app.get('/home', (req, res) => {
+app.get('/home', async (req, res) => {
     const sessionId = req.cookies.sessionId;
     const session = sessionManager.getSession(sessionId);
 
     if (session) {
-        res.render('home', { username: session.username }); // Pass username to the template
+        try {
+            const user = await UserCollection.findOne({ username: session.username });
+            const notifications = user.notifications || []; // Fetch notifications from the database
+            res.render('home', { username: session.username, notifications }); // Pass notifications to the template
+        } catch (error) {
+            console.error("Error fetching notifications:", error);
+            res.status(500).send("Failed to load home page.");
+        }
     } else {
         res.redirect('/login'); // Redirect to login if no session
     }
@@ -116,9 +125,12 @@ app.get('/car/edit/:id', async (req, res) => {
 
 app.get('/logout', (req, res) => {
     const sessionId = req.cookies.sessionId;
-    if (sessionId) {
+    const session = sessionManager.getSession(sessionId);
+
+    if (session) {
+        notificationManager.removeObserver(session.username, new UserObserver(session.username));
         sessionManager.destroySession(sessionId);
-        res.clearCookie('sessionId'); // Clear the cookie
+        res.clearCookie('sessionId');
     }
     res.redirect('/login');
 });
@@ -241,6 +253,11 @@ app.post('/login', async (req, res) => {
         if (await bcrypt.compare(req.body.password, check.password)) {
             const sessionId = sessionManager.createSession(req.body.username);
             res.cookie('sessionId', sessionId, { httpOnly: true }); // Store session ID in a cookie
+
+            // Add the user as an observer
+            const userObserver = new UserObserver(req.body.username);
+            notificationManager.addObserver(req.body.username, userObserver);
+
             res.redirect('/home'); // Redirect to /home AFTER setting the cookie
         } else {
             res.send('Wrong password');
@@ -324,6 +341,12 @@ app.post('/car/book/:id', async (req, res) => {
             startDate: newStartDate,
             endDate: newEndDate
         });
+
+        // Notify the car owner
+        notificationManager.notify(car.ownerUsername, `Your car has been booked by ${session.username} from ${startDate} to ${endDate}.`);
+
+        // Notify the renter
+        notificationManager.notify(session.username, `You have successfully booked the car ${car.model} from ${startDate} to ${endDate}.`);
 
         await car.save();
         res.redirect('/home'); // Redirect to home after booking

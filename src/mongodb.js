@@ -30,6 +30,10 @@ const LogInSchema = new mongoose.Schema({
             }
         ],
         required: true
+    },
+    notifications: {
+        type: [String], // Array of notification messages
+        default: []
     }
 })
 
