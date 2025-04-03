@@ -1,4 +1,4 @@
-//Singleton Pattern
+//Singleton Pattern to manage the user's session securely
 
 class SessionManager {
     constructor() {

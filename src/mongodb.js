@@ -22,6 +22,15 @@ const LogInSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    securityQuestions: {
+        type: [
+            {
+                question: String,
+                answer: String
+            }
+        ],
+        required: true
+    }
 })
 
 const CarListingSchema = new mongoose.Schema({

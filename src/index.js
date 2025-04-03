@@ -1,3 +1,4 @@
+// filepath: c:\Users\husam\OneDrive\Desktop\CIS476\TermProject_DriveShare\src\index.js
 const express = require('express');
 const app = express();
 const path = require('path');
@@ -7,6 +8,20 @@ const bcrypt = require('bcrypt');
 const SessionManager = require('./SessionManager'); // Import SessionManager
 const sessionManager = new SessionManager(); // Get the Singleton instance
 const cookieParser = require('cookie-parser'); // Import cookie-parser
+const CarListingBuilder = require('./CarListingBuilder'); // Import the builder
+const dateFormat = require('handlebars-dateformat'); // Import handlebars-dateformat
+const moment = require('moment');
+
+hbs.registerHelper('dateFormat', dateFormat); // Register the helper
+
+hbs.registerHelper('isAvailable', function (availability) {
+    const now = moment();
+    const start = moment(availability.startDate);
+    const end = moment(availability.endDate);
+
+    // Check if the current date is within the availability range
+    return now.isBetween(start, end, null, '[]'); // Inclusive of start and end dates
+});
 
 app.use(cookieParser()); // Use cookie-parser middleware
 
@@ -116,19 +131,22 @@ app.post('/car/list', async (req, res) => {
         return res.redirect('/login');
     }
 
-    const { model, year, mileage, pickupLocation, rentalPrice } = req.body;
+    const { model, year, mileage, pickupLocation, rentalPrice, startDate, endDate } = req.body; // Extract startDate and endDate
     const ownerUsername = session.username; // Get username from session
 
     try {
-        const newCar = new CarListing({
-            ownerUsername,
-            model,
-            year,
-            mileage,
-            pickupLocation,
-            rentalPrice
-        });
+        // Use the CarListingBuilder to create the car listing object
+        const carListingData = new CarListingBuilder()
+            .setOwnerUsername(ownerUsername)
+            .setModel(model)
+            .setYear(year)
+            .setMileage(mileage)
+            .setPickupLocation(pickupLocation)
+            .setRentalPrice(rentalPrice)
+            .setAvailability([{ startDate: new Date(startDate), endDate: new Date(endDate) }]) // Set availability
+            .build();
 
+        const newCar = new CarListing(carListingData); // Create a new CarListing model instance
         await newCar.save();
         res.redirect('/home');
     } catch (error) {
@@ -166,6 +184,12 @@ app.post('/car/update/:id', async (req, res) => {
         car.pickupLocation = req.body.pickupLocation;
         car.rentalPrice = req.body.rentalPrice;
 
+        // Update availability dates
+        car.availability = [{
+            startDate: new Date(req.body.startDate),
+            endDate: new Date(req.body.endDate)
+        }];
+
         await car.save();
         res.redirect('/car/manage'); // Redirect to manage listings page
     } catch (error) {
@@ -174,15 +198,27 @@ app.post('/car/update/:id', async (req, res) => {
     }
 });
 
-app.post('/signup',async (req, res) => {
+app.post('/signup', async (req, res) => {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
 
-    const data= {
+    // Hash the security answers
+    const hashedAnswers = await Promise.all([
+        bcrypt.hash(req.body.securityAnswer1, saltRounds),
+        bcrypt.hash(req.body.securityAnswer2, saltRounds),
+        bcrypt.hash(req.body.securityAnswer3, saltRounds)
+    ]);
+
+    const data = {
         username: req.body.username,
         email: req.body.email,
-        password: hashedPassword  // Store the hashed password
-    }
+        password: hashedPassword, // Store the hashed password
+        securityQuestions: [
+            { question: req.body.securityQuestion1, answer: hashedAnswers[0] },
+            { question: req.body.securityQuestion2, answer: hashedAnswers[1] },
+            { question: req.body.securityQuestion3, answer: hashedAnswers[2] }
+        ]
+    };
 
     try {
         await UserCollection.insertMany([data]);
@@ -191,7 +227,7 @@ app.post('/signup',async (req, res) => {
         console.error("Error during signup:", error);
         res.status(500).send("Signup failed. Please try again."); // Send an error response
     }
-})
+});
 
 
 app.post('/login', async (req, res) => {

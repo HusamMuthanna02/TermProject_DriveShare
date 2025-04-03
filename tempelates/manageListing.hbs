@@ -11,6 +11,24 @@
             {{#each cars}}
                 <li>
                     Model: {{model}}, Year: {{year}}, Mileage: {{mileage}}, Price: {{rentalPrice}}
+                    <br>
+                    Availability:
+                    {{#if availability}}
+                        {{#each availability}}
+                            <!-- Debugging: Display the startDate, endDate, and isAvailable 
+                            <p>Debug: startDate = {{startDate}}</p>
+                            <p>Debug: endDate = {{endDate}}</p>
+                            <p>Debug: isAvailable = {{isAvailable this}}</p>-->
+                            {{#if (isAvailable this)}}
+                                Available until {{dateFormat endDate 'MM-DD-YYYY'}}
+                            {{else}}
+                                Unavailable
+                            {{/if}}
+                            <br>
+                        {{/each}}
+                    {{else}}
+                        Available Now
+                    {{/if}}
                     <a href="/car/edit/{{_id}}">Edit</a>
                 </li>
             {{/each}}
