@@ -396,16 +396,20 @@ app.get('/car/rented-cars', async (req, res) => {
 
     try {
         const rentedCars = await CarListing.find({ 'bookings.renterUsername': username });
-        const formattedCars = rentedCars.map(car => ({
-            _id: car._id, // Include the car's ID
-            model: car.model,
-            year: car.year,
-            mileage: car.mileage,
-            rentalPrice: car.rentalPrice,
-            startDate: car.bookings.find(b => b.renterUsername === username)?.startDate,
-            endDate: car.bookings.find(b => b.renterUsername === username)?.endDate,
-            ownerUsername: car.ownerUsername
-        }));
+        const formattedCars = rentedCars.map(car => {
+            const booking = car.bookings.find(b => b.renterUsername === username);
+            return {
+                _id: car._id, // Include the car's ID
+                model: car.model,
+                year: car.year,
+                mileage: car.mileage,
+                rentalPrice: car.rentalPrice,
+                startDate: booking?.startDate,
+                endDate: booking?.endDate,
+                ownerUsername: car.ownerUsername,
+                paymentMade: booking?.paymentMade // Include paymentMade property
+            };
+        });
         res.render('rentedCars', { rentedCars: formattedCars });
     } catch (error) {
         console.error("Error fetching rented cars:", error);
@@ -444,6 +448,10 @@ app.post('/car/pay/:id', async (req, res) => {
         } catch (error) {
             return res.status(400).send(error.message); // Handle insufficient balance or other errors
         }
+
+        // Mark the booking as paid
+        booking.paymentMade = true;
+        await car.save();
 
         res.redirect('/car/rented-cars'); // Redirect to rented cars page after payment
     } catch (error) {

@@ -77,7 +77,8 @@ const CarListingSchema = new mongoose.Schema({
         type: [{
             renterUsername: String,
             startDate: Date,
-            endDate: Date
+            endDate: Date,
+            paymentMade: { type: Boolean, default: false } // Add paymentMade property
         }],
         default: []
     }

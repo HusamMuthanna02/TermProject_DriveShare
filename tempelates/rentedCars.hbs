@@ -16,9 +16,13 @@
                     <br>
                     Owner: {{ownerUsername}}
                     <br>
-                    <form action="/car/pay/{{_id}}" method="POST" style="display:inline;">
-                        <button type="submit">Pay ${{rentalPrice}}</button>
-                    </form>
+                    {{#if paymentMade}}
+                        <span>Payment Made</span>
+                    {{else}}
+                        <form action="/car/pay/{{_id}}" method="POST" style="display:inline;">
+                            <button type="submit">Pay ${{rentalPrice}}</button>
+                        </form>
+                    {{/if}}
                 </li>
             {{/each}}
         </ul>
