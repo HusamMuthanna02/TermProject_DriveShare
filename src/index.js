@@ -15,6 +15,7 @@ const { NotificationManager, UserObserver } = require('./NotificationManager'); 
 const notificationManager = new NotificationManager(); // Create an instance
 const PaymentProxy = require('./PaymentProxy'); // Import PaymentProxy
 const paymentProxy = new PaymentProxy(notificationManager); // Create an instance
+const UIMediator = require('./UIMediator'); // Import UIMediator
 
 hbs.registerHelper('dateFormat', dateFormat); // Register the helper
 
@@ -39,6 +40,39 @@ app.use(express.json());
 app.set('view engine', 'hbs');
 app.set('views',templatePath)
 app.use(express.urlencoded({extended:false}));
+
+const uiMediator = new UIMediator();
+
+// Example: Register UI components
+uiMediator.registerComponent('notifications', {
+    setMediator(mediator) {
+        this.mediator = mediator;
+    },
+    update(notifications) {
+        console.log('Notifications updated:', notifications);
+        // Update the notifications UI
+    }
+});
+
+uiMediator.registerComponent('balance', {
+    setMediator(mediator) {
+        this.mediator = mediator;
+    },
+    update(balance) {
+        console.log('Balance updated:', balance);
+        // Update the balance UI
+    }
+});
+
+uiMediator.registerComponent('messages', {
+    setMediator(mediator) {
+        this.mediator = mediator;
+    },
+    addMessage(message) {
+        console.log('New message received:', message);
+        // Update the messages UI
+    }
+});
 
 app.get('/', (req, res) => {
     res.render('login');
@@ -72,6 +106,11 @@ app.get('/home', async (req, res) => {
         try {
             const user = await UserCollection.findOne({ username: session.username });
             const notifications = user.notifications || []; // Fetch notifications from the database
+            const balance = user.balance;
+
+            // Notify mediator to update UI components
+            uiMediator.notify(null, 'updateNotifications', notifications);
+            uiMediator.notify(null, 'updateBalance', balance);
 
             // Fetch unique contacts for messaging
             const messages = await MessageCollection.find({
@@ -470,9 +509,15 @@ app.post('/car/pay/:id', async (req, res) => {
         booking.paymentMade = true;
         await car.save();
 
+        // Notify mediator to update booking status
+        uiMediator.notify(null, 'updateBookingStatus', { carId, status: 'paid' });
+
         res.redirect('/car/rented-cars'); // Redirect to rented cars page after payment
     } catch (error) {
         console.error("Error processing payment:", error);
+
+        // Notify mediator to display an error
+        uiMediator.notify(null, 'displayError', error.message);
         res.status(500).send("Failed to process payment.");
     }
 });
@@ -567,6 +612,110 @@ app.get('/messages', async (req, res) => {
     } catch (error) {
         console.error("Error fetching messages or users:", error);
         res.status(500).send("Failed to fetch messages or users.");
+    }
+});
+
+// Chain of Responsibility classes for security questions
+class SecurityQuestionHandler {
+    constructor(question, answer, nextHandler = null) {
+        this.question = question;
+        this.answer = answer;
+        this.nextHandler = nextHandler;
+    }
+
+    async handle(requestAnswers, index = 0) {
+        const isCorrect = await bcrypt.compare(requestAnswers[index], this.answer);
+        if (isCorrect) {
+            if (this.nextHandler) {
+                return this.nextHandler.handle(requestAnswers, index + 1);
+            }
+            return true; // All questions answered correctly
+        }
+        return false; // Incorrect answer
+    }
+}
+
+app.get('/recover-password', (req, res) => {
+    res.render('recover-password');
+});
+
+app.post('/recover-password', async (req, res) => {
+    const { username } = req.body;
+
+    try {
+        const user = await UserCollection.findOne({ username });
+        if (!user) {
+            return res.status(404).send("User not found.");
+        }
+
+        // Render the recover-password page with the user's security questions
+        res.render('recover-password', { username, questions: user.securityQuestions });
+    } catch (error) {
+        console.error("Error fetching security questions:", error);
+        res.status(500).send("Failed to load security questions.");
+    }
+});
+
+app.post('/validate-security-answers', async (req, res) => {
+    const { username, answer0, answer1, answer2 } = req.body; // Match the names used in the form
+
+    try {
+        const user = await UserCollection.findOne({ username });
+        if (!user) {
+            return res.status(404).send("User not found.");
+        }
+
+        // Debugging: Log the provided answers and stored questions
+        console.log("Provided Answers:", { answer0, answer1, answer2 });
+        console.log("Stored Questions and Answers:", user.securityQuestions);
+
+        // Build the chain of responsibility
+        const question1 = new SecurityQuestionHandler(
+            user.securityQuestions[0].question,
+            user.securityQuestions[0].answer
+        );
+        const question2 = new SecurityQuestionHandler(
+            user.securityQuestions[1].question,
+            user.securityQuestions[1].answer,
+            question1
+        );
+        const question3 = new SecurityQuestionHandler(
+            user.securityQuestions[2].question,
+            user.securityQuestions[2].answer,
+            question2
+        );
+
+        // Validate answers
+        const answers = [answer0, answer1, answer2]; // Match the order of the form inputs
+        if (await question3.handle(answers)) {
+            res.render('reset-password', { username }); // Render the reset password page
+        } else {
+            res.status(400).send('Incorrect answers. Please try again.');
+        }
+    } catch (error) {
+        console.error("Error validating security answers:", error);
+        res.status(500).send("Failed to validate security answers.");
+    }
+});
+
+app.get('/reset-password', (req, res) => {
+    const { username } = req.query; // Pass the username as a query parameter
+    if (!username) {
+        return res.status(400).send("Username is required to reset the password.");
+    }
+    res.render('reset-password', { username });
+});
+
+app.post('/reset-password', async (req, res) => {
+    const { username, newPassword } = req.body;
+
+    try {
+        const hashedPassword = await bcrypt.hash(newPassword, 10); // Hash the new password
+        await UserCollection.updateOne({ username }, { $set: { password: hashedPassword } });
+        res.send('Password reset successful. You can now log in with your new password.');
+    } catch (error) {
+        console.error("Error resetting password:", error);
+        res.status(500).send("Failed to reset password.");
     }
 });
 
