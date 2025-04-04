@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Your Rented Cars</title>
+    <link rel="stylesheet" href="/public/rentedCars.css">
 </head>
 <body>
     <h1>Your Rented Cars</h1>
@@ -10,29 +11,31 @@
         <ul>
             {{#each rentedCars}}
                 <li>
-                    Model: {{model}}, Year: {{year}}, Mileage: {{mileage}}, Price: {{rentalPrice}}
-                    <br>
-                    Rental Period: From {{dateFormat startDate 'MM-DD-YYYY'}} To {{dateFormat endDate 'MM-DD-YYYY'}}
-                    <br>
-                    <p>Click Owners Name To Message</p>
-                    Owner: <a href="/messages/{{ownerUsername}}">{{ownerUsername}}</a> <!-- Link to message the owner -->
-                    <br>
+                    <p><strong>Model:</strong> {{model}}, <strong>Year:</strong> {{year}}, <strong>Mileage:</strong> {{mileage}}, <strong>Price:</strong> ${{rentalPrice}}</p>
+                    <p><strong>Rental Period:</strong> From {{dateFormat startDate 'MM-DD-YYYY'}} To {{dateFormat endDate 'MM-DD-YYYY'}}</p>
+                    <p><strong>Owner:</strong> <a href="/messages/{{ownerUsername}}">{{ownerUsername}}</a></p>
                     {{#if paymentMade}}
                         <span>Payment Made</span>
-                        <br><br>
                     {{else}}
-                        <form action="/car/pay/{{_id}}" method="POST" style="display:inline;">
+                        <form action="/car/pay/{{_id}}" method="POST">
                             <button type="submit">Pay ${{rentalPrice}}</button>
-                            <br><br>
                         </form>
                     {{/if}}
                 </li>
             {{/each}}
         </ul>
     {{else}}
-        <p>You are not renting any cars at the moment.</p>
+        <p class="no-cars-message">You are not renting any cars at the moment.</p>
     {{/if}}
 
     <a href="/home">Back to Home</a>
+
+    <script>
+        // Check if the error query parameter is present
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('error') === 'insufficientBalance') {
+            alert('Insufficient balance. Please add funds to your account.');
+        }
+    </script>
 </body>
 </html>

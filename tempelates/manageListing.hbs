@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Manage Your Listings</title>
+    <link rel="stylesheet" href="/public/manageListing.css">
 </head>
 <body>
     <h1>Manage Your Car Listings</h1>
@@ -10,26 +11,20 @@
         <ul>
             {{#each cars}}
                 <li>
-                    Model: {{model}}, Year: {{year}}, Mileage: {{mileage}}, Price: {{rentalPrice}}
-                    <br>
-                    Availability:
-                    {{#if availability}}
-                        {{#each availability}}
-                            <!-- Debugging: Display the startDate, endDate, and isAvailable 
-                            <p>Debug: startDate = {{startDate}}</p>
-                            <p>Debug: endDate = {{endDate}}</p>
-                            <p>Debug: isAvailable = {{isAvailable this}}</p>-->
-                            {{#if (isAvailable this)}}
-                                Available until {{dateFormat endDate 'MM-DD-YYYY'}}
-                            {{else}}
-                                Unavailable
-                            {{/if}}
-                            <br>
-                        {{/each}}
-                    {{else}}
-                        Available Now
-                    {{/if}}
-                    <br>
+                    <p><strong>Model:</strong> {{model}}, <strong>Year:</strong> {{year}}, <strong>Mileage:</strong> {{mileage}}, <strong>Price:</strong> ${{rentalPrice}}</p>
+                    <p><strong>Availability:</strong>
+                        {{#if availability}}
+                            {{#each availability}}
+                                {{#if (isAvailable this)}}
+                                    Available until {{dateFormat endDate 'MM-DD-YYYY'}}
+                                {{else}}
+                                    Unavailable
+                                {{/if}}
+                            {{/each}}
+                        {{else}}
+                            Available Now
+                        {{/if}}
+                    </p>
                     {{#if bookings.length}}
                         <strong>Bookings:</strong>
                         <ul>
@@ -47,10 +42,9 @@
             {{/each}}
         </ul>
     {{else}}
-        <p>You have no car listings yet.</p>
+        <p class="no-listings-message">You have no car listings yet.</p>
     {{/if}}
 
     <a href="/car/list">Add a New Car</a>
-    <br>
 </body>
 </html>

@@ -2,20 +2,19 @@
 <html>
 <head>
     <title>Available Cars</title>
+    <link rel="stylesheet" href="/public/availableCars.css">
 </head>
 <body>
     <h1>Available Cars for Rent</h1>
 
     <a href="/car/search">Search for Cars</a>
 
-
     {{#if cars.length}}
         <ul>
             {{#each cars}}
                 <li>
-                    Model: {{model}}, Year: {{year}}, Price: {{rentalPrice}} per day
-                    <br>
-                    Location: {{pickupLocation}}
+                    <p><strong>Model:</strong> {{model}}, <strong>Year:</strong> {{year}}, <strong>Price:</strong> ${{rentalPrice}} per day</p>
+                    <p><strong>Location:</strong> {{pickupLocation}}</p>
                     <form action="/car/book/{{_id}}" method="POST">
                         <label for="startDate">Start Date:</label>
                         <input type="date" id="startDate" name="startDate" required>
@@ -27,7 +26,7 @@
             {{/each}}
         </ul>
     {{else}}
-        <p>No cars are currently available for rent.</p>
+        <p class="no-cars-message">No cars are currently available for rent.</p>
     {{/if}}
 
     <a href="/home">Back to Home</a>

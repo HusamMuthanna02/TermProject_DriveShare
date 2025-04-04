@@ -3,22 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Login</title>
+    <link rel="stylesheet" href="/public/login.css">
 </head>
 <body>
 
-    <h2>Log In</h2>
-
     <form action="/login" method="POST">
-
-        <input type="text" name="username" placeholder="username">
-        <input type="password" name="password" placeholder="Password">
-        <input type="submit">
-
+        <h2>Log In</h2>
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <input type="submit" value="Log In">
+        <a href="/signup">Make a new account</a>
+        <a href="/recover-password">Forgot your password?</a>
     </form>
 
-    <a href="/signup">Make a new account</a>
-    <a href="/recover-password">Forgot your password?</a>
+    <script>
+        // Check if the resetSuccess query parameter is present
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('resetSuccess') === 'true') {
+            alert('Password reset successful. You can now log in with your new password.');
+        }
+
+        // Check if the error query parameter is present
+        const error = urlParams.get('error');
+        if (error === 'wrongPassword') {
+            alert('Wrong password. Please try again.');
+        } else if (error === 'wrongDetails') {
+            alert('Wrong details. Please check your username.');
+        } else if (error === 'serverError') {
+            alert('An error occurred. Please try again later.');
+        }
+    </script>
     
 </body>
 </html>

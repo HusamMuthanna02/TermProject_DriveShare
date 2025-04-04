@@ -41,6 +41,9 @@ app.set('view engine', 'hbs');
 app.set('views',templatePath)
 app.use(express.urlencoded({extended:false}));
 
+// Serve static files from the public directory
+app.use('/public', express.static(path.join(__dirname, '../public')));
+
 const uiMediator = new UIMediator();
 
 // Example: Register UI components
@@ -305,7 +308,7 @@ app.post('/login', async (req, res) => {
         const check = await UserCollection.findOne({ username: req.body.username });
 
         if (!check) {
-            return res.send('Wrong Details'); // User not found
+            return res.redirect('/login?error=wrongDetails'); // Redirect with error query parameter
         }
 
         if (await bcrypt.compare(req.body.password, check.password)) {
@@ -318,11 +321,11 @@ app.post('/login', async (req, res) => {
 
             res.redirect('/home'); // Redirect to /home AFTER setting the cookie
         } else {
-            res.send('Wrong password');
+            res.redirect('/login?error=wrongPassword'); // Redirect with error query parameter
         }
     } catch (error) {
         console.error("Login error:", error);
-        res.send('Wrong Details'); // Handle errors 
+        res.redirect('/login?error=serverError'); // Redirect with error query parameter
     }
 });
 
@@ -502,7 +505,7 @@ app.post('/car/pay/:id', async (req, res) => {
         try {
             await paymentProxy.processPayment(session.username, car.ownerUsername, amount, car.model);
         } catch (error) {
-            return res.status(400).send(error.message); // Handle insufficient balance or other errors
+            return res.redirect('/car/rented-cars?error=insufficientBalance'); // Redirect with error query parameter
         }
 
         // Mark the booking as paid
@@ -712,7 +715,7 @@ app.post('/reset-password', async (req, res) => {
     try {
         const hashedPassword = await bcrypt.hash(newPassword, 10); // Hash the new password
         await UserCollection.updateOne({ username }, { $set: { password: hashedPassword } });
-        res.send('Password reset successful. You can now log in with your new password.');
+        res.redirect('/login?resetSuccess=true'); // Redirect to login with a success query parameter
     } catch (error) {
         console.error("Error resetting password:", error);
         res.status(500).send("Failed to reset password.");

@@ -2,10 +2,12 @@ body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f9;
     display: flex;
+    flex-direction: column; /* Ensure vertical alignment */
     justify-content: center;
     align-items: center;
     height: 100vh;
     margin: 0;
+    padding: 20px;
 }
 
 form {
@@ -14,13 +16,16 @@ form {
     border-radius: 10px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 400px;
+    max-width: 500px;
     text-align: center;
 }
 
-h2 {
+h1 {
     margin-bottom: 20px;
     color: #333;
+    font-size: 1.8em;
+    text-align: center;
+    width: 100%; /* Ensure it spans the full width */
 }
 
 label {
@@ -31,8 +36,8 @@ label {
     color: #555;
 }
 
-input[type="text"], input[type="password"], input[type="email"], select {
-    width: 90%;
+input[type="text"], input[type="number"], input[type="date"] {
+    width: 95%;
     padding: 10px;
     margin: 10px 0;
     border: 1px solid #ccc;
@@ -40,7 +45,7 @@ input[type="text"], input[type="password"], input[type="email"], select {
     font-size: 1em;
 }
 
-input[type="submit"] {
+button {
     background-color: #007bff;
     color: #fff;
     border: none;
@@ -51,6 +56,6 @@ input[type="submit"] {
     width: 100%;
 }
 
-input[type="submit"]:hover {
+button:hover {
     background-color: #0056b3;
 }
