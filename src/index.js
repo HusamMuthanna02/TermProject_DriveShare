@@ -108,7 +108,11 @@ app.get('/home', async (req, res) => {
     if (session) {
         try {
             const user = await UserCollection.findOne({ username: session.username });
-            const notifications = user.notifications || []; // Fetch notifications from the database
+            let notifications = user.notifications || []; // Fetch notifications from the database
+
+            // Limit notifications to the last 6
+            notifications = notifications.slice(-6);
+
             const balance = user.balance;
 
             // Notify mediator to update UI components
