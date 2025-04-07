@@ -1,3 +1,4 @@
+// Mediator Pattern 
 class UIMediator {
     constructor() {
         this.components = {};
